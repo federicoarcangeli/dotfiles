@@ -1,4 +1,4 @@
-name: semantic-release-preview
+name: release-preview
 
 on:
   pull_request:
@@ -14,80 +14,65 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # =========================
-      # 1. Checkout repo
-      # =========================
+      # =====================
+      # checkout
+      # =====================
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # =========================
-      # 2. Setup Node
-      # =========================
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      # =========================
-      # 3. Install semantic-release
-      # =========================
-      - name: Install dependencies
+      # =====================
+      # compute diff-based version (ROBUSTO)
+      # =====================
+      - name: Compute next version (safe preview)
+        id: version
         run: |
-          npm install -g semantic-release \
-            @semantic-release/commit-analyzer \
-            @semantic-release/release-notes-generator \
-            @semantic-release/exec
+          BASE=$(git merge-base origin/main HEAD)
+          echo "Base commit: $BASE"
 
-      # =========================
-      # 4. Dry-run semantic release
-      # =========================
-      - name: Run semantic-release dry-run
-        id: sr
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          npx semantic-release --dry-run > release.log || true
-          cat release.log
+          COMMITS=$(git log $BASE..HEAD --pretty=%s)
 
-      # =========================
-      # 5. Extract version safely
-      # =========================
-      - name: Extract next version
-        run: |
-          VERSION=$(grep -oP 'The next release version is \K[0-9]+\.[0-9]+\.[0-9]+' release.log || echo "0.0.0")
+          echo "$COMMITS"
+
+          VERSION="0.0.0"
+
+          while read -r line; do
+            if [[ "$line" == feat!*:* ]]; then
+              VERSION="1.0.0"
+              break
+            elif [[ "$line" == feat:* ]]; then
+              VERSION="0.1.0"
+            elif [[ "$line" == fix:* ]]; then
+              VERSION="0.0.1"
+            fi
+          done <<< "$COMMITS"
+
           echo "$VERSION" > .version.next
-          echo "Detected version: $VERSION"
-          cat .version.next
+          echo "next=$VERSION" >> $GITHUB_OUTPUT
 
-      # =========================
-      # 6. Comment on PR
-      # =========================
+      # =====================
+      # comment PR
+      # =====================
       - name: Comment PR
         uses: actions/github-script@v7
         with:
           script: |
-            const fs = require('fs');
-
-            let version = "unknown";
-            try {
-              version = fs.readFileSync('.version.next', 'utf8').trim();
-            } catch (e) {}
+            const version = "${{ steps.version.outputs.next }}";
 
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `🔮 **Semantic Release Preview**  
+              body: `🔮 **Release Preview**
               📦 Next version: \`${version}\`
-              This is a DRY RUN (no changes applied to main).`
+              (base preview - no semantic-release run)`
             });
 
-      # =========================
-      # 7. Upload artifact (optional debug)
-      # =========================
-      - name: Upload version artifact
+      # =====================
+      # artifact (optional)
+      # =====================
+      - name: Upload preview
         uses: actions/upload-artifact@v4
         with:
           name: version-preview
