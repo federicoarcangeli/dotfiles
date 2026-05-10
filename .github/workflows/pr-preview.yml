@@ -1,0 +1,79 @@
+name: release-preview
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+
+    steps:
+      # =====================
+      # checkout
+      # =====================
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # =====================
+      # compute diff-based version (ROBUSTO)
+      # =====================
+      - name: Compute next version (safe preview)
+        id: version
+        run: |
+          BASE=$(git merge-base origin/main HEAD)
+          echo "Base commit: $BASE"
+
+          COMMITS=$(git log $BASE..HEAD --pretty=%s)
+
+          echo "$COMMITS"
+
+          VERSION="0.0.0"
+
+          while read -r line; do
+            if [[ "$line" == feat!*:* ]]; then
+              VERSION="1.0.0"
+              break
+            elif [[ "$line" == feat:* ]]; then
+              VERSION="0.1.0"
+            elif [[ "$line" == fix:* ]]; then
+              VERSION="0.0.1"
+            fi
+          done <<< "$COMMITS"
+
+          echo "$VERSION" > .version.next
+          echo "next=$VERSION" >> $GITHUB_OUTPUT
+
+      # =====================
+      # comment PR
+      # =====================
+      - name: Comment PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const version = "${{ steps.version.outputs.next }}";
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🔮 **Release Preview**
+              📦 Next version: \`${version}\`
+              (base preview - no semantic-release run)`
+            });
+
+      # =====================
+      # artifact (optional)
+      # =====================
+      - name: Upload preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: version-preview
+          path: .version.next
