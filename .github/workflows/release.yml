@@ -1,4 +1,4 @@
-name: version-bump
+name: semantic-release
 
 on:
   push:
@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  bump:
+  release:
     runs-on: ubuntu-latest
 
     steps:
@@ -18,30 +18,16 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Read version
-        id: version
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install semantic-release
         run: |
-          VERSION=$(cat .version)
-          echo "current=$VERSION" >> $GITHUB_OUTPUT
+          npm install -g semantic-release @semantic-release/git @semantic-release/exec
 
-      - name: Bump patch version
-        id: bump
-        run: |
-          VERSION=$(cat .version)
-
-          IFS='.' read -r major minor patch <<< "$VERSION"
-          patch=$((patch + 1))
-
-          NEW_VERSION="$major.$minor.$patch"
-          echo "$NEW_VERSION" > .version
-
-          echo "new=$NEW_VERSION" >> $GITHUB_OUTPUT
-
-      - name: Commit version bump
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-
-          git add .version
-          git commit -m "chore(release): ${{ steps.bump.outputs.new }}" || exit 0
-          git push
+      - name: Run semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: semantic-release
