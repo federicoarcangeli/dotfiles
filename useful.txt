@@ -1,2 +1,0 @@
-# two monitors, alternatively $screen_name1 or $screen_name-1
-xrandr --output VGA1 --mode 1280x1024 --left-of LVDS1
