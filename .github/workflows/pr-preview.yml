@@ -14,16 +14,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # =========================
+      # 1. Checkout repo
+      # =========================
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      # =========================
+      # 2. Setup Node
+      # =========================
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
+      # =========================
+      # 3. Install semantic-release
+      # =========================
       - name: Install dependencies
         run: |
           npm install -g semantic-release \
@@ -31,27 +40,55 @@ jobs:
             @semantic-release/release-notes-generator \
             @semantic-release/exec
 
+      # =========================
+      # 4. Dry-run semantic release
+      # =========================
       - name: Run semantic-release dry-run
+        id: sr
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx semantic-release --dry-run || true
+        run: |
+          npx semantic-release --dry-run > release.log || true
+          cat release.log
 
-      - name: Create dummy version file
-        run: echo "dry-run" > .version.next
+      # =========================
+      # 5. Extract version safely
+      # =========================
+      - name: Extract next version
+        run: |
+          VERSION=$(grep -oP 'The next release version is \K[0-9]+\.[0-9]+\.[0-9]+' release.log || echo "0.0.0")
+          echo "$VERSION" > .version.next
+          echo "Detected version: $VERSION"
+          cat .version.next
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: version-preview
-          path: .version.next
-
+      # =========================
+      # 6. Comment on PR
+      # =========================
       - name: Comment PR
         uses: actions/github-script@v7
         with:
           script: |
+            const fs = require('fs');
+
+            let version = "unknown";
+            try {
+              version = fs.readFileSync('.version.next', 'utf8').trim();
+            } catch (e) {}
+
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: "🔮 semantic-release dry-run completed (check Actions logs)"
-            })
+              body: `🔮 **Semantic Release Preview**  
+              📦 Next version: \`${version}\`
+              This is a DRY RUN (no changes applied to main).`
+            });
+
+      # =========================
+      # 7. Upload artifact (optional debug)
+      # =========================
+      - name: Upload version artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: version-preview
+          path: .version.next
