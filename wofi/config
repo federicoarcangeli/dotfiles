@@ -1,0 +1,8 @@
+show=drun
+prompt=Search...
+width=450
+height=350
+allow_images=true
+insensitive=true
+location=center
+gtk_dark=true
