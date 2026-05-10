@@ -1,0 +1,113 @@
+@define-color bg #2e3440;
+@define-color bg-alt #3b4252;
+@define-color fg #d8dee9;
+@define-color muted #81a1c1;
+@define-color accent #88c0d0;
+@define-color accent2 #5e81ac;
+@define-color green #a3be8c;
+@define-color yellow #ebcb8b;
+@define-color red #bf616a;
+
+* {
+    font-family: "JetBrainsMono Nerd Font";
+    font-size: 13px;
+    min-height: 0;
+}
+
+window#waybar {
+    background: transparent;
+    color: @fg;
+}
+
+window#waybar > box {
+    background: alpha(@bg, 0.88);
+    border: 1px solid alpha(@accent, 0.25);
+    border-radius: 12px;
+    padding: 0 10px;
+}
+
+/* WORKSPACES */
+#workspaces button {
+    padding: 2px 10px;
+    margin: 3px 2px;
+    border-radius: 8px;
+    color: alpha(@fg, 0.5);
+    background: transparent;
+    transition: all 0.2s ease;
+}
+
+#workspaces button.active {
+    color: @bg;
+    background: @accent;
+}
+
+#workspaces button:hover {
+    background: alpha(@accent, 0.3);
+    color: @fg;
+}
+
+/* WINDOW TITLE */
+#window {
+    color: alpha(@fg, 0.7);
+    padding: 0 12px;
+    font-style: italic;
+}
+
+/* CLOCK */
+#clock {
+    color: @accent;
+    font-weight: bold;
+    padding: 0 12px;
+}
+
+/* MODULES BASE */
+#network,
+#pulseaudio,
+#cpu,
+#memory,
+#tray {
+    background: alpha(@bg-alt, 0.9);
+    margin: 3px 2px;
+    padding: 0 10px;
+    border-radius: 8px;
+}
+
+/* NETWORK */
+#network {
+    color: @green;
+}
+
+/* AUDIO */
+#pulseaudio {
+    color: @accent;
+}
+
+#pulseaudio.muted {
+    color: alpha(@fg, 0.3);
+}
+
+/* CPU */
+#cpu {
+    color: @yellow;
+}
+
+/* MEMORY */
+#memory {
+    color: @accent2;
+}
+
+/* TRAY */
+#tray {
+    padding: 0 6px;
+}
+
+/* TOOLTIP */
+tooltip {
+    background: @bg;
+    border: 1px solid @accent;
+    border-radius: 8px;
+}
+
+tooltip label {
+    color: @fg;
+}
