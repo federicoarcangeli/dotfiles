@@ -1,0 +1,88 @@
+name: semantic-release-preview
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout repo
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 2. Setup Node
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # 3. Install semantic-release + plugins
+      - name: Install dependencies
+        run: |
+          npm install -g semantic-release \
+            @semantic-release/commit-analyzer \
+            @semantic-release/release-notes-generator \
+            @semantic-release/exec
+
+      # 4. Run dry-run release
+      - name: Run semantic-release dry-run
+        id: release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npx semantic-release --dry-run | tee release.log || true
+
+      # 5. Extract version (best-effort parsing)
+      - name: Extract next version
+        run: |
+          VERSION=$(grep -oP 'The next release version is \K[0-9]+\.[0-9]+\.[0-9]+' release.log || true)
+
+          if [ -z "$VERSION" ]; then
+            echo "No version detected"
+            echo "0.0.0" > .version.next
+          else
+            echo "$VERSION" > .version.next
+          fi
+
+          echo "Next version:"
+          cat .version.next
+
+      # 6. Upload version artifact (optional but useful)
+      - name: Upload version artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: version-preview
+          path: .version.next
+
+      # 7. Comment on PR with result
+      - name: Comment PR with version
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let version = "unknown";
+
+            try {
+              version = fs.readFileSync('.version.next', 'utf8').trim();
+            } catch (e) {}
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🔮 **Semantic Release Preview**
+
+📦 Next version: \`${version}\`
+
+This is a DRY RUN (no changes applied to main).`
+            });
