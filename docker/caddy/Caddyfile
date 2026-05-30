@@ -1,0 +1,15 @@
+jellyfin.local {
+    reverse_proxy 192.168.1.14:8096
+}
+
+glances.local {
+    reverse_proxy 192.168.1.14:61208
+}
+
+pihole.local {
+    reverse_proxy 192.168.1.14:80
+}
+
+netdata.local {
+    reverse_proxy 192.168.1.14:19999
+}

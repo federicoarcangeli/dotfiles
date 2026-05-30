@@ -1,0 +1,24 @@
+# runtime data
+docker/pihole/etc-pihole/
+docker/pihole/etc-dnsmasq.d/
+*/cache/
+*/logs/
+*.db
+*.sqlite
+*.sqlite3
+
+# docker runtime data
+**/etc-pihole/
+**/etc-dnsmasq.d/
+**/library/
+**/config/
+**/data/
+**/cache/
+**/logs/
+
+# docker volumes
+**/volumes/
+**/data/
+
+# OS
+.DS_Store
