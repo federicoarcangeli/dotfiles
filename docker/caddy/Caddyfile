@@ -1,15 +1,18 @@
-jellyfin.local {
-    reverse_proxy 192.168.1.14:8096
-}
+tail786c87.ts.net {
 
-glances.local {
-    reverse_proxy 192.168.1.14:61208
-}
+    handle /pihole* {
+        reverse_proxy 127.0.0.1:8081
+    }
 
-pihole.local {
-    reverse_proxy 192.168.1.14:80
-}
+    handle /glances* {
+        reverse_proxy 127.0.0.1:61208
+    }
 
-netdata.local {
-    reverse_proxy 192.168.1.14:19999
+    handle /netdata* {
+        reverse_proxy 127.0.0.1:19999
+    }
+
+    handle /jellyfin* {
+        reverse_proxy 127.0.0.1:8096
+    }
 }

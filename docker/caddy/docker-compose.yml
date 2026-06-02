@@ -8,16 +8,14 @@ services:
       - "80:80"
       - "443:443"
 
+    environment:
+      TS_IP: 100.67.187.112
+      TS_HOST: tail786c87.ts.net
+
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data
       - caddy_config:/config
-
-    networks:
-      - proxy
-
-networks:
-  proxy:
 
 volumes:
   caddy_data:
